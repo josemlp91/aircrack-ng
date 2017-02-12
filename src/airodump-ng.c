@@ -3757,8 +3757,8 @@ int dump_write_csv( void )
     fseek( G.f_txt, 0, SEEK_SET );
 
     fprintf( G.f_txt,
-        "\r\nBSSID, First time seen, Last time seen, channel, Speed, "
-        "Privacy, Cipher, Authentication, Power, # beacons, # IV, LAN IP, ID-length, ESSID, Key\r\n" );
+        "bssid,first_time_seen,last_time_seen,channel,speed,"
+        "privacy,cipher,authentication,power,beacons,iv,lan_ip,id_length,essid,key,wps_locked,wps_version,manufacturer\r\n");
 
     ap_cur = G.ap_1st;
 
@@ -3868,83 +3868,95 @@ int dump_write_csv( void )
             }
         }
 
-        fprintf( G.f_txt, "\r\n");
+        //CUSTOM
+        fprintf( G.f_txt, ",");
+        if (ap_cur->wps.ap_setup_locked) // AP setup locked
+		    fprintf( G.f_txt, "locked");
+		else
+			fprintf( G.f_txt, "unlocked");
 
+		fprintf( G.f_txt, ",");
+		fprintf( G.f_txt,"%i", ap_cur->wps.version);
+		fprintf( G.f_txt, ",");
+		fprintf( G.f_txt,"%s", ap_cur->manuf);
+      	
+        //ENDCUSTOM
+        fprintf( G.f_txt, "\r\n");
         ap_cur = ap_cur->next;
     }
 
-    fprintf( G.f_txt,
-        "\r\nStation MAC, First time seen, Last time seen, "
-        "Power, # packets, BSSID, Probed ESSIDs\r\n" );
+ //    fprintf( G.f_txt,
+ //        "\r\nStation MAC, First time seen, Last time seen, "
+ //        "Power, # packets, BSSID, Probed ESSIDs\r\n" );
 
-    st_cur = G.st_1st;
+ //    st_cur = G.st_1st;
 
-    while( st_cur != NULL )
-    {
-        ap_cur = st_cur->base;
+ //    while( st_cur != NULL )
+ //    {
+ //        ap_cur = st_cur->base;
 
-        if( ap_cur->nb_pkt < 2 )
-        {
-            st_cur = st_cur->next;
-            continue;
-        }
+ //        if( ap_cur->nb_pkt < 2 )
+ //        {
+ //            st_cur = st_cur->next;
+ //            continue;
+ //        }
 
-        fprintf( G.f_txt, "%02X:%02X:%02X:%02X:%02X:%02X, ",
-                 st_cur->stmac[0], st_cur->stmac[1],
-                 st_cur->stmac[2], st_cur->stmac[3],
-                 st_cur->stmac[4], st_cur->stmac[5] );
+ //        fprintf( G.f_txt, "%02X:%02X:%02X:%02X:%02X:%02X, ",
+ //                 st_cur->stmac[0], st_cur->stmac[1],
+ //                 st_cur->stmac[2], st_cur->stmac[3],
+ //                 st_cur->stmac[4], st_cur->stmac[5] );
 
-        ltime = localtime( &st_cur->tinit );
+ //        ltime = localtime( &st_cur->tinit );
 
-        fprintf( G.f_txt, "%04d-%02d-%02d %02d:%02d:%02d, ",
-                 1900 + ltime->tm_year, 1 + ltime->tm_mon,
-                 ltime->tm_mday, ltime->tm_hour,
-                 ltime->tm_min,  ltime->tm_sec );
+ //        fprintf( G.f_txt, "%04d-%02d-%02d %02d:%02d:%02d, ",
+ //                 1900 + ltime->tm_year, 1 + ltime->tm_mon,
+ //                 ltime->tm_mday, ltime->tm_hour,
+ //                 ltime->tm_min,  ltime->tm_sec );
 
-        ltime = localtime( &st_cur->tlast );
+ //        ltime = localtime( &st_cur->tlast );
 
-        fprintf( G.f_txt, "%04d-%02d-%02d %02d:%02d:%02d, ",
-                 1900 + ltime->tm_year, 1 + ltime->tm_mon,
-                 ltime->tm_mday, ltime->tm_hour,
-                 ltime->tm_min,  ltime->tm_sec );
+ //        fprintf( G.f_txt, "%04d-%02d-%02d %02d:%02d:%02d, ",
+ //                 1900 + ltime->tm_year, 1 + ltime->tm_mon,
+ //                 ltime->tm_mday, ltime->tm_hour,
+ //                 ltime->tm_min,  ltime->tm_sec );
 
-        fprintf( G.f_txt, "%3d, %8lu, ",
-                 st_cur->power,
-                 st_cur->nb_pkt );
+ //        fprintf( G.f_txt, "%3d, %8lu, ",
+ //                 st_cur->power,
+ //                 st_cur->nb_pkt );
 
-        if( ! memcmp( ap_cur->bssid, BROADCAST, 6 ) )
-            fprintf( G.f_txt, "(not associated) ," );
-        else
-            fprintf( G.f_txt, "%02X:%02X:%02X:%02X:%02X:%02X,",
-                     ap_cur->bssid[0], ap_cur->bssid[1],
-                     ap_cur->bssid[2], ap_cur->bssid[3],
-                     ap_cur->bssid[4], ap_cur->bssid[5] );
+ //        if( ! memcmp( ap_cur->bssid, BROADCAST, 6 ) )
+ //            fprintf( G.f_txt, "(not associated) ," );
+ //        else
+ //            fprintf( G.f_txt, "%02X:%02X:%02X:%02X:%02X:%02X,",
+ //                     ap_cur->bssid[0], ap_cur->bssid[1],
+ //                     ap_cur->bssid[2], ap_cur->bssid[3],
+ //                     ap_cur->bssid[4], ap_cur->bssid[5] );
 
-	probes_written = 0;
-        for( i = 0, n = 0; i < NB_PRB; i++ )
-        {
-            if( st_cur->ssid_length[i] == 0 )
-                continue;
+	// probes_written = 0;
+ //        for( i = 0, n = 0; i < NB_PRB; i++ )
+ //        {
+ //            if( st_cur->ssid_length[i] == 0 )
+ //                continue;
 
-	    temp = format_text_for_csv((unsigned char *)st_cur->probes[i], st_cur->ssid_length[i]);
+	//     temp = format_text_for_csv((unsigned char *)st_cur->probes[i], st_cur->ssid_length[i]);
 
-	    if( probes_written == 0)
-	    {
-		fprintf( G.f_txt, "%s", temp);
-		probes_written = 1;
-	    }
-	    else
-	    {
-		fprintf( G.f_txt, ",%s", temp);
-	    }
+	//     if( probes_written == 0)
+	//     {
+	// 	fprintf( G.f_txt, "%s", temp);
+	// 	probes_written = 1;
+	//     }
+	//     else
+	//     {
+	// 	fprintf( G.f_txt, ",%s", temp);
+	//     }
 
-	    free(temp);
-        }
+	//     free(temp);
+ //        }
 
-        fprintf( G.f_txt, "\r\n" );
+ //        fprintf( G.f_txt, "\r\n" );
 
-        st_cur = st_cur->next;
-    }
+ //        st_cur = st_cur->next;
+ //    }
 
     fprintf( G.f_txt, "\r\n" );
     fflush( G.f_txt );
